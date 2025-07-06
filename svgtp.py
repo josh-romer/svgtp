@@ -19,9 +19,6 @@ try:
 except IndexError:
     prompt = "404"
 
-print(GENAI_KEY)
-print(prompt)
-
 # Create an genAI client using the key from our environment variable
 client = genai.Client(
     api_key=GENAI_KEY,
@@ -64,7 +61,7 @@ def get_svg(description: str):
         model="gemini-2.5-flash",
         config=types.GenerateContentConfig(
             system_instruction=system_prompt,
-            thinking_config=types.ThinkingConfig(thinking_budget=0),  # Disables thinking
+            # thinking_config=types.ThinkingConfig(thinking_budget=0),  # Disables thinking
         ),
         contents=f"Image description: {description}",
     )
