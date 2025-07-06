@@ -5,18 +5,18 @@
 # dependencies = ["google-genai"]
 # ///
 #
-import os 
+import os
 import sys
 from google import genai
 from google.genai import types
 
 # Set environment variables
-my_api_key = os.getenv('GENAI_KEY')
+my_api_key = os.getenv("GENAI_KEY")
 
 genai.api_key = my_api_key
 
 try:
-    prompt=sys.argv[1]
+    prompt = sys.argv[1]
 except IndexError:
     prompt = "404"
 
@@ -52,13 +52,14 @@ ONLY RESPOND WITH THE TEXT OF THE IMPROVED PROMPT
 prompt_response = client.models.generate_content(
     model="gemini-2.5-flash",
     config=types.GenerateContentConfig(
-                                        system_instruction=prompt_enhancement_instruction,
-                                        # thinking_config=types.ThinkingConfig(thinking_budget=0) # Disables thinking
-                                    ),
+        system_instruction=prompt_enhancement_instruction,
+        # thinking_config=types.ThinkingConfig(thinking_budget=0) # Disables thinking
+    ),
     contents=f"initial prompt: {prompt}",
 )
 enhanced_prompt = prompt_response.text
 print(enhanced_prompt)
+
 
 def get_svg(prompt: str):
     system_prompt = """
@@ -72,14 +73,15 @@ def get_svg(prompt: str):
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         config=types.GenerateContentConfig(
-                                            system_instruction=system_prompt,
-                                            # thinking_config=types.ThinkingConfig(thinking_budget=0) # Disables thinking
-                                        ),
+            system_instruction=system_prompt,
+            # thinking_config=types.ThinkingConfig(thinking_budget=0) # Disables thinking
+        ),
         contents=f"Image description: {enhanced_prompt}",
     )
 
     svg = response.text
     return svg
+
 
 svgs = [get_svg(enhanced_prompt) for i in range(6)]
 
