@@ -103,5 +103,5 @@ html = f"""
 </body>
 </html>
 """
-with open("out.html", "w", encoding="utf-8") as f:
+with open("out/out.html", "w", encoding="utf-8") as f:
     _ = f.write(html)
