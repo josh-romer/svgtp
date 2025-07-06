@@ -7,41 +7,25 @@
 #
 import os
 import sys
+
 from google import genai
 from google.genai import types
 
 # Set environment variables
-my_api_key = os.getenv("GENAI_KEY")
-
-genai.api_key = my_api_key
+GENAI_KEY = os.getenv("GENAI_KEY")
 
 try:
     prompt = sys.argv[1]
 except IndexError:
     prompt = "404"
 
-# WRITE YOUR CODE HERE
+print(GENAI_KEY)
+print(prompt)
 
 # Create an genAI client using the key from our environment variable
 client = genai.Client(
-    api_key=my_api_key,
+    api_key=GENAI_KEY,
 )
-
-system_prompt = """
-You are an expert SVG artist. Your task is to generate clean, compact SVG images representing characters, objects, or scenes. Your output must meet the following requirements:
-
-- Only output valid SVG code—no explanations, comments, or additional text.
-- The SVG must be standalone and fully self-contained.
-- Use only inline styles (no external CSS or unnecessary metadata).
-- Keep the SVG simple and minimal, using basic shapes (e.g., `<rect>`, `<circle>`, `<path>`, `<polygon>`) and solid colors.
-- The SVG should be optimized for small size and fast rendering.
-- Avoid gradients, filters, or complex effects unless explicitly requested.
-- Do not use text elements (`<text>`) inside the SVG unless explicitly requested.
-
-The SVG canvas should fit within a **400px by 400px** viewBox by default, unless otherwise specified. The design must be visually balanced and centered.
-
-Only return the raw SVG content without any preamble, code blocks, or explanations.
-"""
 
 prompt_enhancement_instruction = """
 You are an expert at writing prompts for image generation.
@@ -49,24 +33,30 @@ You reword the given prompt with added detail in order to make prompts for amazi
 Emphasize important details, but keep the description succinct.
 ONLY RESPOND WITH THE TEXT OF THE IMPROVED PROMPT
 """
+
 prompt_response = client.models.generate_content(
     model="gemini-2.5-flash",
     config=types.GenerateContentConfig(
         system_instruction=prompt_enhancement_instruction,
-        # thinking_config=types.ThinkingConfig(thinking_budget=0) # Disables thinking
+        thinking_config=types.ThinkingConfig(thinking_budget=0),  # Disables thinking
     ),
     contents=f"initial prompt: {prompt}",
 )
-enhanced_prompt = prompt_response.text
+
+enhanced_prompt = prompt_response.text or "Request Failed"
 print(enhanced_prompt)
 
 
-def get_svg(prompt: str):
+def get_svg(description: str):
     system_prompt = """
-        You are an expert svg design and creation machine that Outputs only raw, valid SVG code—no explanations, no comments, no markdown, no text before or after.
-        The SVG must be extremely detailed, with intricate line work, complex shapes, fine gradients, and layered visual elements for maximum richness and precision.
+        You are an expert svg design and creation machine that Outputs only raw,
+        valid SVG code no explanations, no comments, no markdown, no text before
+        or after.
+        The SVG must be extremely detailed, with intricate line work, complex shapes,
+        fine gradients, and layered visual elements for maximum richness and precision.
         Add animations to the svg when there is movement described in the prompt.
-        NEVER SURROUND THE SVG WITH A MARKDOWN CODE BLOCK! THE OUTPUT MUST BE SAVEABLE AS A CORRECT SVG. NEVER OUTPUT "```xml"
+        NEVER SURROUND THE SVG WITH A MARKDOWN CODE BLOCK!
+        THE OUTPUT MUST BE SAVEABLE AS A CORRECT SVG. NEVER OUTPUT "```xml"
         """
 
     # Specify the model to use and the messages to send
@@ -74,16 +64,16 @@ def get_svg(prompt: str):
         model="gemini-2.5-flash",
         config=types.GenerateContentConfig(
             system_instruction=system_prompt,
-            # thinking_config=types.ThinkingConfig(thinking_budget=0) # Disables thinking
+            thinking_config=types.ThinkingConfig(thinking_budget=0),  # Disables thinking
         ),
-        contents=f"Image description: {enhanced_prompt}",
+        contents=f"Image description: {description}",
     )
 
-    svg = response.text
+    svg = response.text or ""
     return svg
 
 
-svgs = [get_svg(enhanced_prompt) for i in range(6)]
+svgs = [get_svg(enhanced_prompt) for _ in range(1)]
 
 # with open("out.svg", "w", encoding="utf-8") as f:
 #    f.write(svg)
@@ -114,4 +104,4 @@ html = f"""
 </html>
 """
 with open("out.html", "w", encoding="utf-8") as f:
-    f.write(html)
+    _ = f.write(html)
