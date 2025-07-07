@@ -2,14 +2,16 @@
 #
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["google-genai"]
+# dependencies = ["google-genai", "tqdm"]
 # ///
 #
+import argparse
 import os
 import sys
 
 from google import genai
 from google.genai import types
+from tqdm import trange
 
 # Set environment variables
 GENAI_KEY = os.getenv("GENAI_KEY")
@@ -18,6 +20,31 @@ try:
     prompt = sys.argv[1]
 except IndexError:
     prompt = "404"
+
+parser = argparse.ArgumentParser(description="gemini svg generation script")
+_ = parser.add_argument("prompt", type=str, help="svg prompt")
+_ = parser.add_argument("-c", "--count", type=int, default=1, help="Number of times to print")
+_ = parser.add_argument(
+    "-t",
+    "--thinking",
+    type=bool,
+    action=argparse.BooleanOptionalAction,
+    help="Enable model thinking",
+)
+
+
+# Type hint the result of parse_args() more specifically
+# We'll create a Namespace-like object with the expected attributes
+class Args(argparse.Namespace):
+    prompt: str = "404"
+    count: int = 1
+    thinking: bool = False
+
+
+args = parser.parse_args(namespace=Args())
+count: int = args.count
+prompt: str = args.prompt
+thinking = args.thinking
 
 # Create an genAI client using the key from our environment variable
 client = genai.Client(
@@ -43,6 +70,9 @@ prompt_response = client.models.generate_content(
 enhanced_prompt = prompt_response.text or "Request Failed"
 print(enhanced_prompt)
 
+# -1 means automatic and 0 means disabled
+thinking_budget = -1 if thinking else 0
+
 
 def get_svg(description: str):
     system_prompt = """
@@ -61,7 +91,9 @@ def get_svg(description: str):
         model="gemini-2.5-flash",
         config=types.GenerateContentConfig(
             system_instruction=system_prompt,
-            # thinking_config=types.ThinkingConfig(thinking_budget=0),  # Disables thinking
+            thinking_config=types.ThinkingConfig(
+                thinking_budget=thinking_budget
+            ),  # Disables thinking
         ),
         contents=f"Image description: {description}",
     )
@@ -70,7 +102,7 @@ def get_svg(description: str):
     return svg
 
 
-svgs = [get_svg(enhanced_prompt) for _ in range(1)]
+svgs = [get_svg(enhanced_prompt) for _ in trange(count)]
 
 # with open("out.svg", "w", encoding="utf-8") as f:
 #    f.write(svg)
